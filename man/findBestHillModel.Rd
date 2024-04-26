@@ -5,9 +5,10 @@
 \title{Selects a best-fitting Hill model given defaults}
 \usage{
 findBestHillModel(
-  conc,
-  act,
+  formula,
+  data,
   defaults,
+  weights = NULL,
   start = NULL,
   direction = 0,
   lower = NULL,
@@ -16,12 +17,23 @@ findBestHillModel(
 )
 }
 \arguments{
-\item{conc}{A vector concentration values (including 0 or Inf)}
+\item{formula}{Either an object of class \code{formula} such as would be provided
+to a modeling function like \code{\link[=lm]{lm()}}, or a numeric vector of concentration
+values (including 0 or Inf)}
 
-\item{act}{A vector response values the same length as \code{conc}}
+\item{data}{If \code{forumula} is a symbolic formula, a data frame containing the
+specified values. If \code{formula} is a numeric vector of concentrations, a
+numeric vector of response values}
 
 \item{defaults}{A two value numeric vector containing the default minimal
 effect and the default maximal effect, in that order}
+
+\item{weights}{A vector of weights (between 0 and 1) the same length as
+\code{conc} and \code{act} which determines the weight with which each measurement
+will impact the the sum of squared errors.  Weights will be multiplied by
+errors \emph{before} squaring.  If \code{NULL} (the default) all weights will be set
+to 1. Can be a numeric vector, or the name of a column in \code{data} if \code{formula}
+is a symbolic formula}
 
 \item{start}{A vector of four starting values for the Hill model to be fit.
 Any values not being fit will be fixed at these starting values.  If left as
@@ -63,5 +75,5 @@ conc <- c(0,2^(-6:3),Inf)
 hpar <- c(1,3,0,75)
 response <- evalHillModel(conc, hpar) + rnorm(length(conc),sd=7.5)
 
-hfit <- findBestHillModel(conc,response,c(1,2,3,4),defaults=c(0,100))
+hfit <- findBestHillModel(conc,response,defaults=c(0,100))
 }

@@ -47,7 +47,7 @@ calcHillBootstrap <- function(hfit,ciLevs=c(0.025,0.975),numBoot=NULL) {
 	bcoefs <- array(NA,dim=c(numBoot,4))
 	for (i in 1:numBoot) {
 		bact <- hfit$fitted.values+sample(hfit$residuals,length(hfit$residuals),replace=TRUE)
-		tfit <- try(fitHillModel(hfit$conc,bact,hfit$model,hfit$coefficients,hfit$direction,hfit$pbounds[1,],hfit$pbounds[2,]),silent=TRUE)
+		tfit <- try(fitHillModel(hfit$conc,bact,hfit$model,hfit$weights,hfit$coefficients,hfit$direction,hfit$pbounds[1,],hfit$pbounds[2,]),silent=TRUE)
 		if (!inherits(tfit,"try-error")) { bcoefs[i,] <- tfit$coefficients }
 	}
 	bcoefs <- bcoefs[!is.na(bcoefs[,1]),]

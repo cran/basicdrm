@@ -1,6 +1,6 @@
 Package: basicdrm
 Title: Fit Hill Dose Response Models
-Version: 0.1.0
+Version: 0.3.0
 Authors@R: c(
     person("Anang", "Shelat", email = "anang.shelat@stjude.org", role = c("aut")),
     person("Nathaniel", "Twarog", , email ="nathaniel.twarog@stjude.org", role = c("aut", "cre")))
@@ -18,9 +18,9 @@ Encoding: UTF-8
 RoxygenNote: 7.2.3
 Depends: R (>= 2.10), stats
 NeedsCompilation: no
-Packaged: 2024-02-15 16:21:48 UTC; ntwarog
+Packaged: 2024-04-26 16:02:41 UTC; ntwarog
 Author: Anang Shelat [aut],
   Nathaniel Twarog [aut, cre]
 Maintainer: Nathaniel Twarog <nathaniel.twarog@stjude.org>
 Repository: CRAN
-Date/Publication: 2024-02-16 15:20:05 UTC
+Date/Publication: 2024-04-26 16:20:02 UTC

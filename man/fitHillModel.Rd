@@ -5,9 +5,10 @@
 \title{Fit a Hill dose response model to data}
 \usage{
 fitHillModel(
-  conc,
-  act,
+  formula,
+  data,
   model,
+  weights = NULL,
   start = NULL,
   direction = 0,
   lower = NULL,
@@ -15,9 +16,13 @@ fitHillModel(
 )
 }
 \arguments{
-\item{conc}{A vector concentration values (including 0 or Inf)}
+\item{formula}{Either an object of class \code{formula} such as would be provided
+to a modeling function like \code{\link[=lm]{lm()}}, or a numeric vector of concentration
+values (including 0 or Inf)}
 
-\item{act}{A vector response values the same length as \code{conc}}
+\item{data}{If \code{forumula} is a symbolic formula, a data frame containing the
+specified values. If \code{formula} is a numeric vector of concentrations, a
+numeric vector of response values}
 
 \item{model}{A vector of values between 1 and 4, specifying the precise
 model to be fit. The values correspond to the four parameters of the Hill
@@ -28,6 +33,13 @@ if those parameters are also fit, or fixed at the given starting value. So
 \code{c(1,2,4)} will fit the dose of median effect, the Hill slope, and the
 maximal effect, but will leave the minimal effect fixed at the starting
 value.}
+
+\item{weights}{A vector of weights (between 0 and 1) the same length as
+\code{conc} and \code{act} which determines the weight with which each measurement
+will impact the the sum of squared errors.  Weights will be multiplied by
+errors \emph{before} squaring.  If \code{NULL} (the default) all weights will be set
+to 1. Can be a numeric vector, or the name of a column in \code{data} if \code{formula}
+is a symbolic formula}
 
 \item{start}{A vector of four starting values for the Hill model to be fit.
 Any values not being fit will be fixed at these starting values.  If left as
@@ -53,6 +65,8 @@ An object of class \code{hillrm}, containing the following values:
 \itemize{
 \item \code{conc}: the given vector of concentraitons
 \item \code{act}: the given vector of responses
+\item \code{weights}: the vector of measurement weights used in minimizing the sum
+of squared errors
 \item \code{coefficients}: the full four-parameter Hill parameter vector (accessible
 by the function \code{coef()})
 \item \code{par}: the vector of paramters that were actually fit
@@ -81,8 +95,9 @@ either fixed at a provided value or allowed to be fit to the data.
 conc <- c(0,2^(-6:3),Inf)
 hpar <- c(1,3,0,75)
 response <- evalHillModel(conc, hpar) + rnorm(length(conc),sd=7.5)
+data <- data.frame(conc=conc,response=response,weight=c(0.5,rep(1,10),0.1))
 
 hfit <- fitHillModel(conc,response,c(1,2,3,4),start=c(0.5,1,0,100))
-hfit2 <- fitHillModel(conc,response,c(1,2,4),start=c(0.5,1,0,100),
+hfit2 <- fitHillModel(response~conc,data,c(1,2,4),weight,start=c(0.5,1,0,100),
                       direction=0,lower=c(NA,NA,0,0))
 }

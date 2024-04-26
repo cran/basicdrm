@@ -47,7 +47,7 @@ boundedOpt2d <- function(mnvec,bounds) {
 	num2 <- -(cfp[,4]+2*cfp[,5])*mnvec[1]+(cfp[,4]+cfp[,5])*mnvec[2]-cfp[,2]*mnvec[3]+(cfp[,1]+cfp[,2])*mnvec[4]+cfp[,5]
 	den <- -2*(cfp[,2]+cfp[,3])*mnvec[1]+(cfp[,1]+2*cfp[,2]+cfp[,3])*mnvec[2]+cfp[,3]
 	ccf <- cbind(num1/den,num2/den,NA,NA,NA)
-	if (nrow(edges)==1) { return(ccf[1,1:2],1,coefObjective(ccf[1,1:2],mnvec)[2:3]) }
+	if (nrow(edges)==1) { return(c(ccf[1,1:2],1,coefObjective(ccf[1,1:2],mnvec)[2:3])) }
 	for (i in 1:length(viol)) {
 		nbrs <- c((if (viol[i]==1) nrow(edges) else (viol[i]-1)),(if (viol[i]==nrow(edges)) 1 else (viol[i]+1)))
 		if (all((ccf[i,1]*edges[nbrs,1]+ccf[i,2]*edges[nbrs,2])>=edges[nbrs,3])) {
@@ -110,7 +110,7 @@ addBound2dInt <- function(boundob,newbound) {
 	nrb <- nrow(bounds)
 	nbv <- 1:nrb
 	verts <- boundob$verts
-	vsign <- sign(verts[,1]*newbound[1]+verts[,2]*newbound[2]-newbound[3])
+	vsign <- verts[,1]*newbound[1]+verts[,2]*newbound[2]-newbound[3]
 	if (all(!is.finite(vsign))||all(vsign[is.finite(vsign)]<0)) {
 		# All vertices negative or nonfinite
 		if (all(is.finite(vsign))) { return(NULL) }
@@ -274,7 +274,7 @@ addBound1d <- function(bounds,newbound,name="") {
 		}
 	} else if (newbound[[2]]>0) {
 		if (newbound[[1]] > basicbounds[[2]]) { return(NULL) }
-		else if (newbound[[2]] <= basicbounds[[1]]) { return(bounds) }
+		else if (newbound[[1]] <= basicbounds[[1]]) { return(bounds) }
 		else {
 			if (name=="") { name <- "lower"}
 			newbounds <- structure(

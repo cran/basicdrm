@@ -125,7 +125,7 @@ evalHillModel_sf <- function(conc,sfpar,calcderivs=FALSE) {
 	Rf <- 1-R0            # [0, 1]
 
 	if(!calcderivs) { return(Rf) }
-	padj <- (Rf^2)/clip_positive(pow)
+	padj <- (Rf^2)/pmax(pow,.Machine$double.xmin)
 
 	dRfdIDM <- -padj*clip_positive(n/IDM)
 	dRfdn <- padj*clip_finite(log(conc/IDM))

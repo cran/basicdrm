@@ -8,10 +8,20 @@
 #' information criterio or Akaike information criterion, and returns a Hill fit
 #' object with information from all fits included.
 #'
-#' @param conc A vector concentration values (including 0 or Inf)
-#' @param act A vector response values the same length as `conc`
+#' @param formula Either an object of class `formula` such as would be provided
+#' to a modeling function like [lm()], or a numeric vector of concentration
+#' values (including 0 or Inf)
+#' @param data If `forumula` is a symbolic formula, a data frame containing the
+#' specified values. If `formula` is a numeric vector of concentrations, a
+#' numeric vector of response values
 #' @param defaults A two value numeric vector containing the default minimal
 #' effect and the default maximal effect, in that order
+#' @param weights A vector of weights (between 0 and 1) the same length as
+#' `conc` and `act` which determines the weight with which each measurement
+#' will impact the the sum of squared errors.  Weights will be multiplied by
+#' errors *before* squaring.  If `NULL` (the default) all weights will be set
+#' to 1. Can be a numeric vector, or the name of a column in `data` if `formula`
+#' is a symbolic formula
 #' @param start A vector of four starting values for the Hill model to be fit.
 #' Any values not being fit will be fixed at these starting values.  If left as
 #' `NULL`, a starting vector will be estimated from the data.
@@ -41,9 +51,38 @@
 #' hpar <- c(1,3,0,75)
 #' response <- evalHillModel(conc, hpar) + rnorm(length(conc),sd=7.5)
 #'
-#' hfit <- findBestHillModel(conc,response,c(1,2,3,4),defaults=c(0,100))
-findBestHillModel <- function(conc,act,defaults,start=NULL,direction=0,lower=NULL,upper=NULL,useBIC=TRUE) {
-	prel <- conc>0
+#' hfit <- findBestHillModel(conc,response,defaults=c(0,100))
+
+findBestHillModel <- function(formula,data,defaults,weights=NULL,start=NULL,
+							  direction=0,lower=NULL,upper=NULL,useBIC=TRUE) UseMethod("findBestHillModel")
+
+#' @export
+findBestHillModel.formula <- function(formula,data,defaults,weights=NULL,start=NULL,
+									  direction=0,lower=NULL,upper=NULL,useBIC=TRUE) {
+	mf <- stats::model.frame(formula=formula, data=data)
+	conc <- stats::model.matrix(attr(mf, "terms"), data=mf)
+	tms <- attr(conc,"assign")
+	for (i in seq(length(tms),1,by=-1)) {
+		if (tms[i]==0) { conc <- conc[,-i] }
+	}
+	act <- stats::model.response(mf)
+	weights <- eval(substitute(weights),data)
+	hfit <- findBestHillModel.default(conc,act,defaults,weights,start,
+									  direction,lower,upper,useBIC)
+	hfit$call <- match.call()
+	return(hfit)
+}
+
+#' @export
+findBestHillModel.default <- function(formula,data,defaults,weights=NULL,start=NULL,
+									  direction=0,lower=NULL,upper=NULL,useBIC=TRUE) {
+	conc <- formula
+	act <- data
+
+	prel <- conc>0 & is.finite(conc)
+
+	if (is.null(weights)) { weights <- rep(1,length(conc)) }
+	else if (length(weights)==1) { weights <- rep(weights,length(conc)) }
 
 	# Pick appropriate parameter bounds
 	tlower <- c(exp(1.5*log(min(conc[prel]))-0.5*log(max(conc[prel]))), 0.1, -Inf, -Inf)
@@ -78,15 +117,15 @@ findBestHillModel <- function(conc,act,defaults,start=NULL,direction=0,lower=NUL
 	allmodels <- list()
 	allfits <- list()
 	for (i in 1:5) {
-		if (i<5) { allmodels[[i]] <- fitHillModel(conc,act,models[[i]],start,direction,lower,upper) }
+		if (i<5) { allmodels[[i]] <- fitHillModel(conc,act,models[[i]],weights,start,direction,lower,upper) }
 		else {
 			mnv <- mean(act)
 			allmodels[[i]] <- list(coefficients=c(start[1:2],mnv,mnv),par=mnv,conc=conc,act=act,residuals=act-mnv)
 		}
 		allfits[[i]] <- list(coefficients=allmodels[[i]]$coefficients,
 							 par=allmodels[[i]]$par,
-							 AIC=estimateAIC(allmodels[[i]]$residuals,length(allmodels[[i]]$par)),
-							 BIC=estimateBIC(allmodels[[i]]$residuals,length(allmodels[[i]]$par)))
+							 AIC=estimateAIC(weights*allmodels[[i]]$residuals,length(allmodels[[i]]$par)),
+							 BIC=estimateBIC(weights*allmodels[[i]]$residuals,length(allmodels[[i]]$par)))
 	}
 	names(allfits) <- c("m2p","m3puc","m3plc","m4p","const")
 
@@ -96,7 +135,7 @@ findBestHillModel <- function(conc,act,defaults,start=NULL,direction=0,lower=NUL
 	biv <- modelSelect(icv,parv)
 
 	structure(
-		list(conc=conc,act=act,par=allmodels[[biv]]$par,coefficients=allmodels[[biv]]$coefficients,
+		list(conc=conc,act=act,weights=weights,par=allmodels[[biv]]$par,coefficients=allmodels[[biv]]$coefficients,
 				 fitted.values=allmodels[[biv]]$fitted.values,residuals=allmodels[[biv]]$residuals,
 				 mname=allmodels[[biv]]$mname,model=allmodels[[biv]]$model,start=start,direction=direction,
 				 pbounds=rbind(lower,upper),allfits=allfits),
